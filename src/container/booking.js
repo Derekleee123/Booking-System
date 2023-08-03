@@ -15,8 +15,8 @@ const getOptions = (total) => {
 
 function Booking() {
   const optionMaximum = 20;
-  const optionContent = getOptions(optionMaximum);
   const [optionListNumber, setOptionListNumber] = useState(1);
+  const [optionContent, setoptionContent] = useState(getOptions(optionMaximum));
   const [ageStart, setAgeStart] = useState("");
   const [ageEnd, setAgeEnd] = useState("");
   const [inputForm] = Form.useForm();
@@ -42,12 +42,8 @@ function Booking() {
       //   optionForm.validateFields([option]);
       //   const age = optionForm.getFieldValue(option);
       
-
-      console.log(ageStart);
-      if (ageStart < 15) {
-        return Promise.resolve();
-      } else {
-        return Promise.reject("錯誤");
+      for(let i = 0; i < ageStart; i++) {
+        optionContent[i].disabled = true
       }
     };
 
