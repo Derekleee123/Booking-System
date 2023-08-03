@@ -1,0 +1,59 @@
+.frame {
+  height: 600px;
+  width: 800px;
+  background: rgba(216, 216, 216, 0.6);
+  border-radius: 5px;
+  border: 2px solid #fff;
+  padding: 20px;
+  overflow-y: scroll;
+}
+
+.option-title {
+  margin-top: 10px;
+  margin-bottom: 10px;
+  font-weight: bold;
+  font-size: 20px;
+}
+
+.option-border {
+  width: 50%;
+  height: 130px;
+}
+
+.option-area {
+  display: flex;
+  justify-content: space-between;
+  width: 350px;
+  margin-top: 10px;
+}
+
+.between-text{
+    height: 40px;
+}
+
+.text-right {
+  float: right;
+  margin-top: 5px;
+  margin-right: 50px;
+}
+
+.add-setting {
+  text-decoration: none;
+  color: rgb(9, 117, 153);
+  width: 120px;
+}
+
+.remove-setting {
+  text-decoration: none;
+  color: rgb(197, 1, 1);
+  width: 60px;
+}
+
+/* custormized ANTD */
+.option-border .ant-input-number-group-addon {
+  background: #c4c4c4;
+}
+
+.option-border .ant-form-item {
+  margin-bottom: 0;
+}
