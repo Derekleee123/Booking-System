@@ -40,13 +40,13 @@
 .add-setting {
   text-decoration: none;
   color: rgb(9, 117, 153);
-  width: 120px;
+  width: 150px;
 }
 
 .remove-setting {
   text-decoration: none;
   color: rgb(197, 1, 1);
-  width: 60px;
+  width: 70px;
 }
 
 /* custormized ANTD */

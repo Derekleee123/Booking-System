@@ -20,54 +20,106 @@ function Booking() {
   const [optionContent, setOptionContent] = useState(getOptions(optionMaximum));
   const [ageStart, setAgeStart] = useState([]);
   const [ageEnd, setAgeEnd] = useState([]);
+  const [price, setPrice] = useState([]);
+  const [seletDisabled, setSelectDisabled] = useState([false]);
   const [removeIndex, setRemoveIndex] = useState("");
+  const [checkAgeIndex, setCheckAgeIndex] = useState(1);
   const [inputForm] = Form.useForm();
   const [optionForm] = Form.useForm();
 
   useEffect(() => {
-    if (removeIndex) {
-      const filterList = listContent.filter((v) => {
-        return v.index !== removeIndex;
-      });
-      setListContent(filterList);
-    } else {
-      console.log(ageStart);
-      let option = JSON.parse(JSON.stringify(listContent));
+    if (!removeIndex) {
+      let list = JSON.parse(JSON.stringify(listContent));
+
       for (let i = 0; i < listNumber; i++) {
-        option[i] = {
+        list[i] = {
           index: i,
           ageStart: ageStart[i] ?? "",
           ageEnd: ageEnd[i] ?? "",
-          price: inputForm.getFieldValue([`number_input_${i}`]) ?? "",
+          price: price[i] ?? "",
         };
       }
+      setListContent(list);
 
-      setListContent(option);
+      let disabled = JSON.parse(JSON.stringify(seletDisabled));
+      const disabledIndex = list.findIndex((v) => {
+        return v.ageStart === "" || v.ageEnd === "" || v.price === "";
+      });
+
+      for (let i = 0; i < listNumber; i++) {
+        if (i > disabledIndex) {
+          disabled[i] = true;
+        } else {
+          disabled[i] = false;
+        }
+
+        // 當找不到disable的清單時，表示頁面上所有的資料已填，設disabled = false
+        if (disabledIndex === -1) {
+          disabled[i] = false;
+        }
+      }
+
+      setSelectDisabled(disabled);
     }
-  }, [listNumber, optionContent, removeIndex]);
+  }, [listNumber, optionContent]);
+
+  useEffect(() => {
+    if (removeIndex) {
+      let list = listContent.filter((v) => v.index !== removeIndex);
+
+      for (let i = 0; i < list.length; i++) {
+        list[i].index = i;
+      }
+
+      let tempAgeStart = JSON.parse(JSON.stringify(ageStart));
+      let tempAgeEnd = JSON.parse(JSON.stringify(ageEnd));
+      let tempPrice = JSON.parse(JSON.stringify(price));
+
+      tempAgeStart.splice(removeIndex, 1);
+      tempAgeEnd.splice(removeIndex, 1);
+      tempPrice.splice(removeIndex, 1);
+
+      setAgeStart(tempAgeStart);
+      setAgeEnd(tempAgeEnd);
+      setPrice(tempPrice);
+
+      setListContent(list);
+      setListNumber((priceSetNumber) => priceSetNumber - 1);
+    }
+  }, [removeIndex]);
 
   // 新增或移除表單時, 需重設選單的年齡
   useEffect(() => {
-    for (let i = 0; i < listContent.length; i++) {
-      optionForm.setFieldValue({
-        [`age_option_start_${i}`]: listContent[i].ageStart,
-        [`age_option_end_${i}`]: listContent[i].ageEnd,
-      });
+    if (listContent.length > 0) {
+      let ageUpdate = {};
+      let priceUpdate = {};
+
+      for (let i = 0; i < listContent.length; i++) {
+        ageUpdate[`age_option_start_${i}`] = listContent[i].ageStart;
+        ageUpdate[`age_option_end_${i}`] = listContent[i].ageEnd;
+        priceUpdate[`number_input_${i}`] = listContent[i].price;
+      }
+
+      optionForm.setFieldsValue(ageUpdate);
+      inputForm.setFieldsValue(priceUpdate);
     }
   }, [listContent]);
 
   // 處理disabled的選項
   useEffect(() => {
+    // 確保先讓所有選項可以選取
     let option = JSON.parse(JSON.stringify(optionContent));
-    const isUsedArray = ageStart.concat(ageEnd);
+    for (const element of option) {
+      element.disabled = false;
+    }
 
+    // 根據已設定過的選項，將其設定為disabled
+    const isUsedArray = ageStart.concat(ageEnd);
     for (const element of isUsedArray) {
-      if (element) {
-        option[element].disabled = true;
-      }
+      option[element].disabled = true;
     }
     setOptionContent(option);
-  }, [ageStart, ageEnd]);
+  }, [ageStart, ageEnd, price]);
 
   const addOptions = (e) => {
     e.preventDefault();
@@ -80,26 +132,35 @@ function Booking() {
 
     const listIndex = parseInt(e.target.dataset.listIndex);
     setRemoveIndex(listIndex);
-
-    const ageFrom = JSON.parse(JSON.stringify(ageStart));
-    delete ageFrom[listIndex];
-    setAgeStart(ageFrom);
-
-    const ageTo = JSON.parse(JSON.stringify(ageEnd));
-    delete ageTo[listIndex];
-    setAgeEnd(ageTo);
-
-    setListNumber((priceSetNumber) => priceSetNumber - 1);
   };
 
-  const getListByCount = (optionContent, count, removeOptions) => {
-    const checkAge = (_, value) => {
-      //   optionForm.validateFields([option]);
-      //   const age = optionForm.getFieldValue(option);
+  const getListByCount = (optionContent, removeOptions) => {
+    const checkAge = (rule, value, callback) => {
+      if (listNumber === 1) {
+        return;
+      }
+
+      for (let i = 0; i < listNumber; i++) {
+        if (i === checkAgeIndex) continue;
+        // if (ageStart[i] !== undefined && ageEnd[i] !== undefined) {
+        const orderArray = [ageStart[i], ageEnd[i]];
+        orderArray.sort((a, b) => a - b);
+
+        if (orderArray[0] <= value && value <= orderArray[1]) {
+          callback("不可以選取重複的區間"); // 校验失败，返回错误信息
+        }
+        // }
+      }
     };
 
     const checkPrice = (input) => {
       inputForm.validateFields([input]);
+    };
+
+    const handlePriceChange = (index) => {
+      let tempPrice = JSON.parse(JSON.stringify(price));
+      tempPrice[index] = inputForm.getFieldValue(`number_input_${index}`);
+      setPrice(tempPrice);
     };
 
     const handleAgeChange = (from, index) => {
@@ -107,14 +168,18 @@ function Booking() {
       checkPrice(`number_input_${index - 1}`);
 
       if (from === "start") {
-        let temp = [...ageStart];
-        temp[index] = optionForm.getFieldValue(`age_option_start_${index}`);
-        setAgeStart(temp);
+        let tempStart = JSON.parse(JSON.stringify(ageStart));
+        tempStart[index] = optionForm.getFieldValue(
+          `age_option_start_${index}`
+        );
+        setAgeStart(tempStart);
       } else if (from === "end") {
-        let temp = [...ageEnd];
-        temp[index] = optionForm.getFieldValue(`age_option_end_${index}`);
-        setAgeEnd(temp);
+        let tempEnd = JSON.parse(JSON.stringify(ageEnd));
+        tempEnd[index] = optionForm.getFieldValue(`age_option_end_${index}`);
+        setAgeEnd(tempEnd);
       }
+
+      setCheckAgeIndex(index);
     };
 
     const result = listContent.map((v) => {
@@ -124,7 +189,7 @@ function Booking() {
             <div className="option-title">價格設定 - {v.index + 1}</div>
             {v.index !== 0 && (
               <a
-                href=""
+                href="/"
                 className="remove-setting flex-between"
                 onClick={removeOptions}
                 data-list-index={v.index}
@@ -156,6 +221,7 @@ function Booking() {
                     <Select
                       size="large"
                       style={{ width: 150 }}
+                      disabled={seletDisabled[v.index]}
                       options={optionContent}
                       onChange={() => handleAgeChange("start", v.index)}
                     />
@@ -172,6 +238,7 @@ function Booking() {
                     <Select
                       size="large"
                       style={{ width: 150 }}
+                      disabled={seletDisabled[v.index]}
                       options={optionContent}
                       onChange={() => handleAgeChange("end", v.index)}
                     />
@@ -196,9 +263,11 @@ function Booking() {
                     <InputNumber
                       size="large"
                       addonBefore="TWD"
+                      disabled={seletDisabled[v.index]}
                       min={0}
                       style={{ width: 350 }}
                       onBlur={() => checkPrice(`number_input_${v.index}`)}
+                      onChange={() => handlePriceChange(v.index)}
                       formatter={(value) =>
                         value.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
                       }
@@ -220,10 +289,10 @@ function Booking() {
 
   return (
     <div className="frame">
-      <a href="" className="add-setting flex-between" onClick={addOptions}>
+      <a href="/" className="add-setting flex-between" onClick={addOptions}>
         <span className="material-symbols-outlined">add</span> 新增價格設定
       </a>
-      {getListByCount(optionContent, listNumber, removeOptions)}
+      {getListByCount(optionContent, removeOptions)}
     </div>
   );
 }
